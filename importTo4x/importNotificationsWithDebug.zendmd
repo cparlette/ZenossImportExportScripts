@@ -1,0 +1,80 @@
+import os
+import sys
+import Globals
+import re
+tf = getFacade('triggers')
+f = None
+f = open('/home/zenoss/exportedNotifications.txt', 'r')
+while f:
+ nname = f.readline()
+ if not nname:
+  break
+ naction = f.readline()
+ ndata = f.readline()
+ newn = tf.addNotification(nname[:-1], naction[:-1])
+ print nname
+ en = eval(ndata)
+ en['uid'] = newn.uid
+ uid = en['uid']
+ notification = tf._getObject(uid)
+ if en['subscriptions']:
+  triggeruuid = en['subscriptions'][0]['uuid']
+  for trig in tf.getTriggers():
+   if trig['name'] == en['subscriptions'][0]['name']:
+    notification.subscriptions = [trig['uuid']]
+ print en['subscriptions']
+ print notification.subscriptions
+ #notification.subscriptions = en['subscriptions']
+ notifications.recipients = en['recipients']
+ for recipient in notifications.recipients:
+  for recOption in tf.getRecipientOptions():
+   if recOption['label'] == recipient['label']:
+    recipient[
+    
+ if naction[:-1] == 'command':
+  print "adding command"
+  notification.content['body_format'] = en['content']['items'][0]['items'][1]['value']
+  notification.content['clear_body_format'] = en['content']['items'][0]['items'][2]['value']
+ elif naction[:-1] == 'email':
+  notification.content['body_content_type'] = en['content']['items'][0]['items'][0]['value']
+  notification.content['subject_format'] = en['content']['items'][0]['items'][1]['value']
+  notification.content['body_format'] = en['content']['items'][0]['items'][2]['value']
+  notification.content['clear_subject_format'] = en['content']['items'][0]['items'][3]['value']
+  notification.content['clear_body_format'] = en['content']['items'][0]['items'][4]['value']
+ elif naction[:-1] == 'page':
+  notification.content['subject_format'] = en['content']['items'][0]['items'][0]['value']
+  notification.content['clear_subject_format'] = en['content']['items'][0]['items'][1]['value']
+ notification.send_initial_occurrence = en['send_initial_occurrence']
+ notification.delay_seconds = en['delay_seconds']
+ notification.send_clear = en['send_clear']
+ notification.enabled = en['enabled']
+ notification.description = en['description']
+ notification.repeat_seconds = en['repeac_seconds']
+ notification.userManage = en['userManage']
+ notification.userRead = en['userRead']
+ notification.userWrite = en['userWrite']
+ notification.globalRead = en['notification_globalRead']
+ notification.globalWrite = en['notification_globalWrite']
+ notification.globalManage = en['notification_globalManage']
+ tf.updateNotificationSubscriptions(notification)
+
+commit()
+
+
+from Products.ZenUtils.guid.interfaces import IGlobalIdentifier, IGUIDManager
+from zenoss.protocols.jsonformat import to_dict, from_dict
+import zenoss.protocols.protobufs.zep_pb2 as zep
+triggerSubscriptions = []
+notification_guid = IGlobalIdentifier(notification).getGUID()
+for subscription in notification.subscriptions:
+    triggerSubscriptions.append(dict(
+        delay_seconds = notification.delay_seconds,
+        repeat_seconds = notification.repeat_seconds,
+        subscriber_uuid = notification_guid,
+        send_initial_occurrence = notification.send_initial_occurrence,
+        trigger_uuid = subscription,
+    ))
+
+subscriptionSet = from_dict(zep.EventTriggerSubscriptionSet, dict(
+    subscriptions = triggerSubscriptions
+))

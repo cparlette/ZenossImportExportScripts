@@ -1,0 +1,19 @@
+import os
+import sys
+import Globals
+from xml.dom.minidom import parse
+f = None
+for template in dmd.Devices.getAllRRDTemplates():
+ filename = "/home/zenoss/templates/"+template.getPrimaryId().replace("/", "")+".xml"
+ f = open(filename, 'w')
+ print "Writing %s" % template.getPrimaryId()
+ template.exportXml(f)
+ f.close()
+ f = open(filename, 'r')
+ xml = parse(f)
+ f.close()
+ xml.getElementsByTagName('object')[0].setAttribute('id', template.getPrimaryId())
+ f = open(filename, 'w')
+ xml.writexml(f, addindent="    ")
+ f.close()
+

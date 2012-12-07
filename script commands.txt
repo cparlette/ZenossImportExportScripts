@@ -1,0 +1,94 @@
+python BatchDeviceDumper.py --outFile ./allDevices.txt
+
+./zenobjectcopier.py --export --object="/zport/dmd/ZenUsers" --file=ZenUsers.xml
+
+./zenobjectcopier.py --export --object="/zport/dmd/Events" --file=Events.xml
+
+./zendiag.py
+
+zendmd --script=showAllTransforms.py > transforms.txt
+
+./zenobjectcopier.py --export --object="/zport/dmd/Services/WinService" --file=WinService.xml
+
+cd ~
+mkdir groups
+zendmd --script=exportGroups.zendmd
+
+zendmd --script=exportTriggers.zendmd > exportedTriggers.txt
+zendmd --script=exportNotifications.zendmd > exportedNotifications.txt
+
+cd ~
+mkdir templates
+zendmd --script=exportTemplates.zendmd
+
+zendmd --script=exportTemplateNames.zendmd > exportedTemplateNames.txt
+
+
+
+
+EXPORTING FROM 3.X:
+python BatchDeviceDumper.py --outFile ./allDevices.txt
+./zenobjectcopier.py --export --object="/zport/dmd/ZenUsers" --file=ZenUsers.xml
+./zenobjectcopier.py --export --object="/zport/dmd/Events" --file=Events.xml
+./zendiag.py
+zendmd --script=showAllTransforms.py > transforms.txt
+./zenobjectcopier.py --export --object="/zport/dmd/Services" --file=Services.xml
+mkdir groups
+zendmd --script=exportGroups.zendmd
+mkdir templates
+zendmd --script=exportTemplates.zendmd
+zendmd --script=exportTemplateNames.zendmd > exportedTemplateNames.txt
+tar czvf outputFiles.tgz allDevices.txt ZenUsers.xml Events.xml transforms.txt Services.xml ~/groups ~/templates exportedTemplateNames.txt
+
+
+
+FILES GENERATED:
+allDevices.txt
+ZenUsers.xml
+Events.xml
+transforms.txt
+Services.xml
+~/groups/*.xml
+~/templates/*.xml
+exportedTemplates.txt
+exportedGroups.txt
+exportedTemplateNames.txt
+zendiag-YYYY-MM-DD-HH-MM.zip
+
+tar czvf outputFiles.tgz allDevices.txt ZenUsers.xml Events.xml transforms.txt Services.xml ~/groups ~/templates exportedTemplateNames.txt
+
+
+EXPORTING FROM 4.X:
+python BatchDeviceDumper.py --outFile ./allDevices.txt
+./zenobjectcopier.py --export --object="/zport/dmd/ZenUsers" --file=ZenUsers.xml
+./zenobjectcopier.py --export --object="/zport/dmd/Events" --file=Events.xml
+./zendiag.py
+zendmd --script=showAllTransforms.py > transforms.txt
+./zenobjectcopier.py --export --object="/zport/dmd/Services" --file=Services.xml
+mkdir groups
+zendmd --script=exportGroups.zendmd
+mkdir templates
+zendmd --script=exportTemplates.zendmd
+zendmd --script=exportTemplateNames.zendmd > exportedTemplateNames.txt
+zendmd --script=exportTriggers.zendmd > exportedTriggers.txt
+zendmd --script=exportNotifications.zendmd > exportedNotifications.txt
+tar czvf outputFiles.tgz allDevices.txt ZenUsers.xml Events.xml transforms.txt Services.xml ~/groups ~/templates exportedTemplateNames.txt exportedTriggers.txt exportedNotifications.txt
+
+
+
+FILES GENERATED FROM 4.X:
+allDevices.txt
+ZenUsers.xml
+Events.xml
+transforms.txt
+Services.xml
+~/groups/*.xml
+~/templates/*.xml
+exportedTemplates.txt
+exportedGroups.txt
+exportedTemplateNames.txt
+exportedTriggers.txt
+exportedNotifications.txt
+zendiag-YYYY-MM-DD-HH-MM.zip
+
+tar czvf outputFiles.tgz allDevices.txt ZenUsers.xml Events.xml transforms.txt Services.xml ~/groups ~/templates exportedTemplateNames.txt

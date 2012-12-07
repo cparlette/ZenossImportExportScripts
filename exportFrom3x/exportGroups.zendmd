@@ -1,0 +1,19 @@
+import os
+import sys
+import Globals
+from xml.dom.minidom import parse
+f = None
+for group in dmd.ZenUsers.getAllGroupSettings():
+ filename = "/home/zenoss/groups/"+group.id+".xml"
+ f = open(filename, 'w')
+ print "Writing %s" % group.id
+ group.exportXml(f)
+ f.close()
+ f = open(filename, 'r')
+ xml = parse(f)
+ f.close()
+ xml.getElementsByTagName('object')[0].setAttribute('id', group.getPrimaryId())
+ f = open(filename, 'w')
+ xml.writexml(f, addindent="    ")
+ f.close()
+

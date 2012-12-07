@@ -1,0 +1,4 @@
+tf = getFacade('triggers')
+for trigger in tf.getTriggers():
+ print trigger['name']
+ print trigger

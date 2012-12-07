@@ -1,0 +1,21 @@
+tf = getFacade('triggers')
+for n in tf.getNotifications():
+ data = {}
+ data['notification_globalRead'] = n.globalRead
+ data['notification_globalWrite'] = n.globalWrite
+ data['notification_globalManage'] = n.globalManage
+ data['subscriptions'] = n.subscriptions
+ data['recipients'] = n.recipients
+ data['content'] = n.content
+ data['send_initial_occurrence'] = n.send_initial_occurrence
+ data['delay_seconds'] = n.delay_seconds
+ data['send_clear'] = n.send_clear
+ data['enabled'] = n.enabled
+ data['description'] = n.description
+ data['repeac_seconds'] = n.repeat_seconds
+ data['userManage'] = n.userManage
+ data['userRead'] = n.userRead
+ data['userWrite'] = n.userWrite
+ print n.id
+ print n.action
+ print data

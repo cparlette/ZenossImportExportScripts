@@ -1,0 +1,19 @@
+import os
+import sys
+import Globals
+from xml.dom.minidom import parse
+f = None
+for window in dmd.maintenanceWindowSearch():
+ filename = "/home/zenoss/windows/"+window.getObject().getPrimaryId().replace("/", "")+".xml"
+ f = open(filename, 'w')
+ print "Writing %s" % window.getObject().getPrimaryId()
+ window.getObject().exportXml(f)
+ f.close()
+ f = open(filename, 'r')
+ xml = parse(f)
+ f.close()
+ xml.getElementsByTagName('object')[0].setAttribute('id', window.getObject().getPrimaryId())
+ f = open(filename, 'w')
+ xml.writexml(f, addindent="    ")
+ f.close()
+

@@ -1,0 +1,3 @@
+for template in dmd.Devices.getAllRRDTemplates():
+ print template.id
+ print template.getPrimaryParent().getPrimaryParent().getPrimaryId()

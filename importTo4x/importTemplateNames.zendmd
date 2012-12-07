@@ -1,0 +1,14 @@
+import os
+import sys
+import Globals
+tf = getFacade('template')
+f = None
+f = open('/home/zenoss/exportedTemplateNames.txt', 'r')
+while f:
+ templateid = f.readline()
+ if not templateid:
+  break
+ templateparent = f.readline()
+ if not templateparent.endswith('devices\n'):
+  tf.addTemplate(templateid, templateparent)
+ commit()

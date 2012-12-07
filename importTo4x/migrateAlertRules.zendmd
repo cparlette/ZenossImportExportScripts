@@ -1,0 +1,158 @@
+import re
+from Products.ZenModel.Trigger import InvalidTriggerActionType
+from Products.ZenModel.ZenossSecurity import *
+from Products.ZenEvents.WhereClause import toPython, PythonConversionException
+
+from Products import Zuul
+from Products.ZenModel.NotificationSubscriptionWindow import NotificationSubscriptionWindow
+
+
+def _reformatEventAttributeReference(m):
+    """method to pass to re.sub to convert the matched text to updated format"""
+    # some url names have evolved in description
+    newUrlNames = {
+            'deleteUrl' : 'closeUrl',
+            'undeleteUrl' : 'reopenUrl',
+            }
+    # most attributes are rooted at 'evt'
+    root = 'evt'
+    attrname = m.group('attr')
+    if attrname.endswith('Url'):
+        # urls have a different root
+        root = 'urls'
+        # if there is a new name, map to it; else just use the same attrname
+        attrname = newUrlNames.get(attrname, attrname)
+    elif attrname.startswith('clear') and attrname != 'clearid':
+        # clearXxxAttribute refs change to clearEvt/xxxAttribute
+        root = 'clearEvt'
+        # slice off leading 'clear'
+        attrname = attrname[len('clear'):]
+        # downcase leading character
+        attrname = attrname[0].lower()+attrname[1:]
+    # return attribute reference in TALES format
+    return '${%s/%s}' % (root, attrname)
+
+
+def talesifyLegacyFormatString(s, refRe = re.compile(r"%\((?P<attr>[^)]+)\)s")):
+    """method to convert old-style Python string interpolation to TALES syntax"""
+    return refRe.sub(_reformatEventAttributeReference, s)
+
+class TriggerRuleSourceError(Exception): pass
+
+
+def _parseRule(rule):
+    python_statement = toPython(rule.genMeta(), rule.where)
+    # if the parser failed to parse the where clause, the python statement
+    # will be empty.
+    if not python_statement:
+        raise TriggerRuleSourceError(rule.where)
+    print 'Parsing From: "%s"' % rule.where
+    print '        To  : "%s"' % python_statement
+    return python_statement
+
+def _parseContent(content):
+    return talesifyLegacyFormatString(content)
+
+def _createTrigger(rule):
+    print 'Creating trigger for: %s' % rule.id
+    new_rule_source = _parseRule(rule)
+    # make the rules unique - per user
+    trigger_name = '%s - %s' % (rule.id, rule.getUser().getId())
+    for t in existing_triggers:
+        if trigger_name == t['name']:
+            print 'Trigger already exists, not creating.'
+            return triggers_facade.getTrigger(t['uuid'])
+    trigger_uuid = triggers_facade.addTrigger(trigger_name)  
+    trigger = triggers_facade.getTrigger(trigger_uuid)
+    trigger['enabled'] = rule.enabled
+    trigger['rule']['source'] = new_rule_source
+    trigger_obj = dmd.Triggers.findChild(trigger_name)
+    # Just add the user of the alert rule as an owner on this trigger,
+    # don't worry about moving ownership off admin or anything like that.
+    trigger_obj.manage_addLocalRoles(rule.getUser().getId(), [OWNER_ROLE])
+    triggers_facade.updateTrigger(**trigger)
+    return trigger
+
+def _createNotification(rule, trigger):
+    print 'Creating notification for: %s (%s)' % (rule.id, rule.action)
+    notification_name = '%s - %s' % (rule.id, rule.getUser().getId())
+    for n in existing_notifications:
+        if notification_name == n.name:
+            print 'Notification already exists, not creating.'
+            return
+    triggers_facade.addNotification(notification_name, rule.action)
+    notification_obj = dmd.NotificationSubscriptions.findChild(notification_name)
+    # make the rule owner also an owner of this notification object.
+    notification_obj.manage_addLocalRoles(rule.getUser().getId(), [OWNER_ROLE])
+    notification_obj.enabled = rule.enabled
+    notification_obj.send_clear = rule.sendClear
+    notification_obj.send_initial_occurrence = True
+    notification_obj.delay_seconds = rule.delay
+    notification_obj.repeat_seconds = rule.repeatTime
+    notification_obj.subscriptions = [trigger['uuid']]
+    notification_obj.content['body_content_type'] = 'text' if rule.plainText else 'html'
+    notification_obj.content['body_format'] = _parseContent(rule.body)
+    notification_obj.content['subject_format'] = _parseContent(rule.format)
+    notification_obj.content['clear_body_format'] = _parseContent(rule.clearBody)
+    notification_obj.content['clear_subject_format'] = _parseContent(rule.clearFormat)
+    # add the rule owner as a recipient of this notification, with full
+    # permissions.
+    recipient = triggers_facade.fetchRecipientOption(rule.getUser())
+    recipient.update(dict(write=True, manage=True))
+    recipients = [recipient]
+    if rule.targetAddr:
+        recipients.append(dict(
+            type = 'manual',
+            label = rule.targetAddr,
+            value = rule.targetAddr
+        ))
+    notification_obj.recipients = recipients
+    print 'Creating new windows for this notification...'
+    for window in rule.windows.objectValues():
+        print 'Copying window: %s' % window.id
+        nsw = NotificationSubscriptionWindow(window.id)
+        window_props = ['name', 'start', 'started', 'duration', 'repeat',
+                     'startProductionState','stopProductionState',
+                     'enabled', 'skip']
+        for prop in window_props:
+            print 'Setting property on new window: %s = %s' % (prop, getattr(window, prop))
+            setattr(nsw, prop, getattr(window, prop))
+        # set window properties
+        notification_obj.windows._setObject(nsw.id, nsw)
+    print 'Have these windows: %r' % notification_obj.windows.objectValues()
+    triggers_facade.updateNotificationSubscriptions(notification_obj)
+
+
+def cutover():
+    # action rules are being removed, make sure they haven't been yet.
+    rules = []
+    if hasattr(dmd.ZenUsers, 'getAllActionRules'):
+        rules = dmd.ZenUsers.getAllActionRules()
+    failed = False
+    for rule in rules:
+        try:
+            trigger = _createTrigger(rule)
+            _createNotification(rule, trigger)
+            print 'Done processing rule: %s.' % rule.id
+        except InvalidTriggerActionType, e:
+            failed = True
+            print " %s: Successfully migrated rule to Trigger, but was "
+            print "unable to create a Notification - rule has invalid or "
+            print "unknown action type: %s" % (rule.id, rule.action)
+        except TriggerRuleSourceError:
+            failed = True
+            print 'Unable to parse existing rule: %s' % rule.id
+        except PythonConversionException, e:
+            failed = True
+            print "Exception: %s", e
+            print "Failed to convert existing rule: %s" % rule.id
+    if failed:
+        print 'If any rules were unable to be migrated, they will need to'
+        print ' be manually migrated to triggers and notifications. You can access'
+        print ' the old Alerting Rules through the ZMI.'
+
+triggers_facade = Zuul.getFacade('triggers', dmd)
+existing_triggers = triggers_facade.getTriggers()
+existing_notifications = triggers_facade.getNotifications()
+
+cutover()
