@@ -1,0 +1,15 @@
+import os
+import sys
+import Globals
+df = getFacade('device')
+f = None
+f = open('/home/zenoss/exportedDeviceComments.txt', 'r')
+while f:
+ deviceid = f.readline()
+ if not deviceid:
+  break
+ devicecomments = f.readline()
+ datadict = {}
+ datadict["comments"] = devicecomments
+ df.setInfo(uid=deviceid, data=datadict)
+ commit()

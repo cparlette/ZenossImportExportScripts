@@ -1,0 +1,3 @@
+for d in dmd.Devices.getSubDevices():
+ print d.getPrimaryId()
+ print d.comments
