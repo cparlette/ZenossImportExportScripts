@@ -92,3 +92,16 @@ exportedNotifications.txt
 zendiag-YYYY-MM-DD-HH-MM.zip
 
 tar czvf outputFiles.tgz allDevices.txt ZenUsers.xml Events.xml transforms.txt Services.xml ~/groups ~/templates exportedTemplateNames.txt
+
+
+
+IMPORTING TO 4.X:
+./zenobjectcopier.py --import --file=ZenUsers.xml
+./zenobjectcopier.py --import --file=Events.xml
+./zenobjectcopier.py --import --file=Services.xml
+zenbatchload --nomodel allDevices.txt
+zendmd --script=importTriggers.zendmd
+zendmd --script=importNotifications.zendmd
+zendmd --script=importTemplateNames.zendmd
+for xml in /home/zenoss/templates/*.xml; do python /home/zenoss/zenobjectcopier.py --import --file=$xml; done
+for xml in /home/zenoss/groups/*.xml; do python /home/zenoss/zenobjectcopier.py --import --file=$xml; done
