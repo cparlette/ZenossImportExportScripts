@@ -10,6 +10,6 @@ while f:
   break
  devicecomments = f.readline()
  datadict = {}
- datadict["comments"] = devicecomments
- df.setInfo(uid=deviceid, data=datadict)
+ datadict["comments"] = devicecomments[:-1]
+ df.setInfo(uid=deviceid[:-1], data=datadict)
  commit()
