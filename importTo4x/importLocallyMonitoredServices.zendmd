@@ -1,0 +1,16 @@
+import os
+import sys
+import Globals
+f = None
+df = getFacade('device')
+f = open('/home/zenoss/exportedServicesToMonitor.txt', 'r')
+while f:
+ deviceid = f.readline()
+ if not deviceid:
+  break
+ servicesstring = f.readline()
+ d = find(deviceid[:-1])
+ serviceslist = eval(servicesstring[:-1])
+ for service in serviceslist:
+  df.setMonitor([d.os.winservices._getOb(service).getPrimaryUrlPath()], True)
+  commit()

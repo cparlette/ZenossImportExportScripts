@@ -1,0 +1,15 @@
+alreadymonitored = []
+for service in dmd.Services.WinService.getSubObjects():
+ if service.zMonitor == True:
+  alreadymonitored.append(service.id)
+
+for d in dmd.Devices.getSubDevices():
+ if d.os.winservices():
+  results = []
+  for ws in d.os.winservices():
+   if ws.isMonitored() == True:
+    if ws.id not in alreadymonitored:
+     results.append(ws.id)
+  if results:
+   print d.id
+   print results
