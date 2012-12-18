@@ -11,8 +11,13 @@ while f:
   break
  templateparent = f.readline()
  templatetype = f.readline()
- if templatetype[:-1] == "device":
-  tf.addTemplate(templateid[:-1], templateparent[:-1])
- if templatetype[:-1] == "local":
-  df.addLocalTemplate(templateparent[:-1], templateid[:-1])
+ try:
+  if templatetype[:-1] == "class":
+   tf.addTemplate(templateid[:-1], templateparent[:-1])
+   print "Added local template "+templateid[:-1]
+  if templatetype[:-1] == "local":
+   df.addLocalTemplate(templateparent[:-1], templateid[:-1])
+   print "Added local template "+templateid[:-1]
+ except:
+  print "Did not add template "+templateid[:-1]+", it likely already exists"
  commit()
