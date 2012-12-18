@@ -2,7 +2,7 @@ for template in dmd.Devices.getAllRRDTemplates():
  print template.id
  if "rrdTemplates" in template.getPrimaryId():
   print template.getPrimaryParent().getPrimaryParent().getPrimaryId()
-  print "device"
+  print "class"
  else:
   print template.getPrimaryParent().getPrimaryId()
   print "local"
