@@ -12,5 +12,8 @@ while f:
  d = find(deviceid[:-1])
  serviceslist = eval(servicesstring[:-1])
  for service in serviceslist:
-  df.setMonitor([d.os.winservices._getOb(service).getPrimaryUrlPath()], True)
+  servicefullpath = d.os.winservices._getOb(service).getPrimaryUrlPath()
+  if '%24' in servicefullpath:
+   servicefullpath.replace('$24', '$')
+  df.setMonitor([servicefullpath], True)
   commit()
