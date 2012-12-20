@@ -156,3 +156,4 @@ existing_triggers = triggers_facade.getTriggers()
 existing_notifications = triggers_facade.getNotifications()
 
 cutover()
+commit()
